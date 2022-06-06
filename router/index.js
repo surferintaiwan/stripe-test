@@ -17,4 +17,21 @@ router.post('/register', (req, res) => {
     });
 });
 
+router.post('/handlePayment', async (req, res) => {
+    const parsedPlan = JSON.parse(req.body.plan);
+
+    const customerInfo = {
+        name: req.body.name,
+        email: req.body.email,
+        planId: parsedPlan.id,
+    };
+
+    const subscription = await STRIPE_API.createCustomerAndSubscription(
+        req.body.paymentMethodId,
+        customerInfo,
+    );
+
+    return res.json({ subscription });
+});
+
 module.exports = router;
