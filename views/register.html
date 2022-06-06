@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="app-container-60 register">
+    <h3 class="header-uppercase header-white header-margin-bottom">
+        {{ productName }}
+    </h3>
+
+    <form id="payment-form">
+        <div class="card">
+            <div class="card-body">
+
+                <div class="card-title">
+                    <h4 class="header-uppercase header-blue">
+                        {{ plan.nickname }}
+                    </h4>
+                    <h2 class="price">{{ plan.amount }}
+                        <span>
+                            /
+                            {% if (plan.interval_count > 1) %}
+                            {{ plan.interval_count }} {{ plan.interval }}s
+
+                            {% else %}
+                            {{ plan.interval }}
+                            {% endif %}
+                        </span>
+                    </h2>
+                </div>
+
+                <!-- INPUTS -->
+                <input id="plan" type="hidden" value="{{ plan.formatted }}" name="plan" />
+                <input id="customerName" name="name" required="true" placeholder="Name" />
+                <input id="customerEmail" name="email" type="email" required="true" placeholder="Email" />
+
+                <div id="card-element">
+                    <!-- Stripe Elements will be mounted here -->
+                </div>
+
+                <div id="card-errors" role="alert">
+                    <!-- Any Stripe Elements error messages will be mounted here -->
+                </div>
+            </div>
+
+            <!-- FORM SUBMISSION -->
+            <button class="card-btn" type="submit">Pay Now</button>
+        </div>
+    </form>
+
+</div>
+
+<!-- JAVASCRIPT HERE -->
+
+
+<script></script>
+
+
+{% endblock %}
