@@ -188,6 +188,7 @@
                 console.error('Error creating Stripe Payment Method: ', result.error);
             } else {
                 /* Proceed to next step of creating customer and subscription */
+                console.log('result.paymentMethod =>', result.paymentMethod)
                 stripePaymentMethodHandler(result.paymentMethod);
             }
         });
@@ -211,6 +212,7 @@
             return response.json();
         }).then((parsedResponse) => {
             /* Proceed to next step of checking Payment Intent status */
+            console.log('parsedResponse.subscription =>', parsedResponse.subscription)
             manageSubscriptionStatus(parsedResponse.subscription);
         }).catch((err) => {
             console.error('Error creating subscription:', err);

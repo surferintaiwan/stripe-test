@@ -5,7 +5,6 @@ var stripe = require('stripe')(process.env.STRIPE_API_KEY);
 /* Import constants and helper functions */
 const UTILS = require('../utils/index');
 
-
 /**
  * @param {string} paymentMethodId The id of your customer's Stripe Payment Method (an 
  * abstraction of your customer's card information)
@@ -14,6 +13,14 @@ const UTILS = require('../utils/index');
  * @return {Object} Your customer's newly created subscription
  */
 async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
+  // check if customer already existed
+  const emailQuery = `email:'${customerInfo.email}'`
+  const customersSearch = await stripe.customers.search({query: emailQuery})
+  if (customersSearch.data.length > 0) {
+    console.log('this customert already exists in Stripe, plsease do something')
+    console.log('customerSearch.data =>', customersSearch.data)
+  }
+  
   /* Create customer and set default payment method */
   const customer = await stripe.customers.create({
     payment_method: paymentMethodId,
@@ -22,8 +29,18 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
     invoice_settings: {
       default_payment_method: paymentMethodId,
     },
+    metadata: {
+      userId: 'userId'
+    }
   });
 
+  const metadataQuery = `metadata['email']:'${customerInfo.email}'`
+  const subscriptionsSearch = await stripe.subscriptions.search({query: metadataQuery})
+  if (subscriptionsSearch.data.length > 0) {
+    console.log(`this user's subscription already exists in Stripe, plsease do something`)
+    console.log('subscriptionsSearch.data =>', subscriptionsSearch.data)
+    console.log('subscriptionsSearch.data[0].items =>', subscriptionsSearch.data[0].items)
+  }
   /* Create subscription and expand the latest invoice's Payment Intent 
    * We'll check this Payment Intent's status to determine if this payment needs SCA
    */
@@ -33,17 +50,14 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
       plan: customerInfo.planId,
     }],
     expand: ["latest_invoice.payment_intent"],
+    metadata: {
+      email: customerInfo.email,
+      userId: 'userId'
+    }
   });
 
   return subscription;
 }
-
-
-module.exports = {
-  getProductsAndPlans,
-  createCustomerAndSubscription
-};
-
 
 /**
  * @param {Array} products An array of Stripe products
@@ -124,4 +138,5 @@ function getProductsAndPlans() {
 
 module.exports = {
   getProductsAndPlans,
+  createCustomerAndSubscription
 };
