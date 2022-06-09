@@ -34,4 +34,15 @@ router.post('/handlePayment', async (req, res) => {
     return res.json({ subscription });
 });
 
+router.post('/cancelSubscription', async (req, res) => {
+    // const cancelParams = {
+    //     invoice_now: req.body.invoice_now,
+    //     prorate: req.body.prorate,
+    // };
+    
+    const subscription = await STRIPE_API.cancelSubscription(req.body.subscriptionId, cancelParams)
+
+    return res.json({ subscription });
+});
+
 module.exports = router;

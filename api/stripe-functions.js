@@ -15,12 +15,12 @@ const UTILS = require('../utils/index');
 async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
   // check if customer already existed
   const emailQuery = `email:'${customerInfo.email}'`
-  const customersSearch = await stripe.customers.search({query: emailQuery})
+  const customersSearch = await stripe.customers.search({ query: emailQuery })
   if (customersSearch.data.length > 0) {
     console.log('this customert already exists in Stripe, plsease do something')
     console.log('customerSearch.data =>', customersSearch.data)
   }
-  
+
   /* Create customer and set default payment method */
   const customer = await stripe.customers.create({
     payment_method: paymentMethodId,
@@ -35,11 +35,23 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
   });
 
   const metadataQuery = `metadata['email']:'${customerInfo.email}'`
-  const subscriptionsSearch = await stripe.subscriptions.search({query: metadataQuery})
+  const subscriptionsSearch = await stripe.subscriptions.search({ query: metadataQuery })
   if (subscriptionsSearch.data.length > 0) {
     console.log(`this user's subscription already exists in Stripe, plsease do something`)
     console.log('subscriptionsSearch.data =>', subscriptionsSearch.data)
     console.log('subscriptionsSearch.data[0].items =>', subscriptionsSearch.data[0].items)
+
+    // upgrade or downgrade plan
+    const subscription = await stripe.subscriptions.update(subscriptionsSearch.data[0].id, {
+      cancel_at_period_end: false,
+      proration_behavior: 'create_prorations',
+      items: [{
+        id: subscriptionsSearch.data[0].items.data[0].id,
+        price: customerInfo.planId,
+      }]
+    })
+
+    return subscription
   }
   /* Create subscription and expand the latest invoice's Payment Intent 
    * We'll check this Payment Intent's status to determine if this payment needs SCA
@@ -57,6 +69,15 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
   });
 
   return subscription;
+}
+
+async function cancelSubscription(subscriptionId, cancelParams) {
+  // const cancelSubscription = await stripe.subscriptions.del(subscriptionId, cancelParams)
+  const cancelSubscription = await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: true
+  })
+
+  return cancelSubscription
 }
 
 /**
@@ -138,5 +159,6 @@ function getProductsAndPlans() {
 
 module.exports = {
   getProductsAndPlans,
-  createCustomerAndSubscription
+  createCustomerAndSubscription,
+  cancelSubscription
 };
