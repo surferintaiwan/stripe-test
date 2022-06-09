@@ -13,46 +13,31 @@ const UTILS = require('../utils/index');
  * @return {Object} Your customer's newly created subscription
  */
 async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
-  // check if customer already existed
-  const emailQuery = `email:'${customerInfo.email}'`
-  const customersSearch = await stripe.customers.search({ query: emailQuery })
-  if (customersSearch.data.length > 0) {
-    console.log('this customert already exists in Stripe, plsease do something')
-    console.log('customerSearch.data =>', customersSearch.data)
-  }
+  const customer = await stripe.customers.retrieve('cus_LpdVvrm90kzJgA')
 
   /* Create customer and set default payment method */
-  const customer = await stripe.customers.create({
-    payment_method: paymentMethodId,
-    email: customerInfo.email,
-    name: customerInfo.name,
-    invoice_settings: {
-      default_payment_method: paymentMethodId,
-    },
-    metadata: {
-      userId: 'userId'
-    }
-  });
+  // const customer = await stripe.customers.create({
+  //   payment_method: paymentMethodId,
+  //   email: customerInfo.email,
+  //   name: customerInfo.name,
+  //   invoice_settings: {
+  //     default_payment_method: paymentMethodId,
+  //   }
+  // });
 
-  const metadataQuery = `metadata['email']:'${customerInfo.email}'`
-  const subscriptionsSearch = await stripe.subscriptions.search({ query: metadataQuery })
-  if (subscriptionsSearch.data.length > 0) {
-    console.log(`this user's subscription already exists in Stripe, plsease do something`)
-    console.log('subscriptionsSearch.data =>', subscriptionsSearch.data)
-    console.log('subscriptionsSearch.data[0].items =>', subscriptionsSearch.data[0].items)
+  // const subscription = await stripe.subscriptions.retrieve('sub_1L7yE5JDn5tTmyIhdx3gd8y')
 
-    // upgrade or downgrade plan
-    const subscription = await stripe.subscriptions.update(subscriptionsSearch.data[0].id, {
-      cancel_at_period_end: false,
-      proration_behavior: 'create_prorations',
-      items: [{
-        id: subscriptionsSearch.data[0].items.data[0].id,
-        price: customerInfo.planId,
-      }]
-    })
 
-    return subscription
-  }
+  // upgrade or downgrade plan
+  // const subscription = await stripe.subscriptions.update(subscription.id, {
+  //   cancel_at_period_end: false,
+  //   proration_behavior: 'create_prorations',
+  //   items: [{
+  //     id: subscriptionsSearch.data[0].items.data[0].id,
+  //     price: customerInfo.planId,
+  //   }]
+  // })
+
   /* Create subscription and expand the latest invoice's Payment Intent 
    * We'll check this Payment Intent's status to determine if this payment needs SCA
    */
@@ -61,11 +46,7 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
     items: [{
       plan: customerInfo.planId,
     }],
-    expand: ["latest_invoice.payment_intent"],
-    metadata: {
-      email: customerInfo.email,
-      userId: 'userId'
-    }
+    expand: ["latest_invoice.payment_intent"]
   });
 
   return subscription;
