@@ -13,30 +13,19 @@ const UTILS = require('../utils/index');
  * @return {Object} Your customer's newly created subscription
  */
 async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
-  const customer = await stripe.customers.retrieve('cus_LpdVvrm90kzJgA')
+  // const customer = await stripe.customers.retrieve('cus_LpdVvrm90kzJgA')
 
   /* Create customer and set default payment method */
-  // const customer = await stripe.customers.create({
-  //   payment_method: paymentMethodId,
-  //   email: customerInfo.email,
-  //   name: customerInfo.name,
-  //   invoice_settings: {
-  //     default_payment_method: paymentMethodId,
-  //   }
-  // });
+  const customer = await stripe.customers.create({
+    payment_method: paymentMethodId,
+    email: customerInfo.email,
+    name: customerInfo.name,
+    invoice_settings: {
+      default_payment_method: paymentMethodId,
+    }
+  });
 
   // const subscription = await stripe.subscriptions.retrieve('sub_1L7yE5JDn5tTmyIhdx3gd8y')
-
-
-  // upgrade or downgrade plan
-  // const subscription = await stripe.subscriptions.update(subscription.id, {
-  //   cancel_at_period_end: false,
-  //   proration_behavior: 'create_prorations',
-  //   items: [{
-  //     id: subscriptionsSearch.data[0].items.data[0].id,
-  //     price: customerInfo.planId,
-  //   }]
-  // })
 
   /* Create subscription and expand the latest invoice's Payment Intent 
    * We'll check this Payment Intent's status to determine if this payment needs SCA
@@ -48,8 +37,21 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
     }],
     expand: ["latest_invoice.payment_intent"]
   });
-
+  console.log('subscription =>', subscription)
   return subscription;
+}
+
+async function updateSubscription(subscriptionId, subscriptionItemId, newProductPriceId){
+  const subscription = await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: false,
+    proration_behavior: 'create_prorations',
+    items: [{
+      id: subscriptionItemId,
+      price: newProductPriceId,
+    }]
+  })
+
+  return subscription
 }
 
 async function cancelSubscription(subscriptionId, cancelParams) {
@@ -141,5 +143,6 @@ function getProductsAndPlans() {
 module.exports = {
   getProductsAndPlans,
   createCustomerAndSubscription,
+  updateSubscription,
   cancelSubscription
 };
