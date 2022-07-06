@@ -20,6 +20,7 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
     payment_method: paymentMethodId,
     email: customerInfo.email,
     name: customerInfo.name,
+    address: customerInfo.address,
     invoice_settings: {
       default_payment_method: paymentMethodId,
     }

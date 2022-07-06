@@ -205,6 +205,10 @@
                 email: document.getElementById('customerEmail').value,
                 name: document.getElementById('customerName').value,
                 plan: document.getElementById('plan').value,
+                address: {
+                    country:"TW",
+                    line1: '6F., No. 100, Aly. 50, Ln. 60, Sec. 1, Bade Rd., Zhongzheng Dist., Taipei City'
+                },
                 paymentMethodId: paymentMethod.id,
             }),
         }).then((response) => {

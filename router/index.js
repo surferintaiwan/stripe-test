@@ -25,6 +25,7 @@ router.post('/handlePayment', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         planId: parsedPlan.id,
+        address: req.body.address
     };
 
     const subscription = await STRIPE_API.createCustomerAndSubscription(
