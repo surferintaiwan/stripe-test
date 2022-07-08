@@ -146,7 +146,7 @@
 
 
     /* Create "card" instance of Stripe Elements and mount it to "#card-element" div */
-    var cardElement = elements.create("card", { style: elementsStyles });
+    var cardElement = elements.create("card", { style: elementsStyles, hidePostalCode: true });
     cardElement.mount("#card-element");
 
     /* Set up event listeners on card */

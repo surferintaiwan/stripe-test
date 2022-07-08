@@ -155,7 +155,7 @@
     /* MORE STRIPE ELEMENTS ACTIONS */
 
     /* Create "card" instance of Stripe Elements and mount it to "#card-element" div */
-    var cardElement = elements.create("card", { style: elementsStyles });
+    var cardElement = elements.create("card", { style: elementsStyles, hidePostalCode: true });
     cardElement.mount("#card-element");
 
     /* Set up event listeners on card */
@@ -189,7 +189,7 @@
             } else {
                 /* Proceed to next step of creating customer and subscription */
                 console.log('result.paymentMethod =>', result.paymentMethod)
-             
+
                 stripePaymentMethodHandler(result.paymentMethod);
             }
         });
@@ -207,7 +207,7 @@
                 name: document.getElementById('customerName').value,
                 plan: document.getElementById('plan').value,
                 address: {
-                    country:"US",
+                    country: "US",
                     line1: '6F., No. 100, Aly. 50, Ln. 60, Sec. 1, Bade Rd., Zhongzheng Dist., Taipei City'
                 },
                 paymentMethodId: paymentMethod.id,
