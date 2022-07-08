@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const express = require('express');
 const nunjucks = require('nunjucks');
 
@@ -16,17 +18,17 @@ app.use(express.static(__dirname));
 app.use('/styles', express.static('styles'));
 
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    const endpointSecret = 'whsec_qnzKOxnZoWa4abPqZ50ytGoF5T5dqrcI'
-    const sig = req.headers['stripe-signature'];
+  const endpointSecret = 'whsec_qnzKOxnZoWa4abPqZ50ytGoF5T5dqrcI'
+  const sig = req.headers['stripe-signature'];
 
-    const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
-    console.log('event =>', event)
-    const object = event.data.object
-    console.log('object =>', object)
+  const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
+  console.log('event =>', event)
+  const object = event.data.object
+  console.log('object =>', object)
 })
 
 /* To use 'req.body' -- to parse 'application/json' content-type */
-app.use(express.json()); 
+app.use(express.json());
 
 /* To use 'req.body' -- to parse 'application/x-www-form-urlencoded' content-type */
 app.use(express.urlencoded({ extended: true }));

@@ -26,6 +26,8 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
     }
   });
 
+  console.log('customer=>', customer)
+
   // const subscription = await stripe.subscriptions.retrieve('sub_1L7yE5JDn5tTmyIhdx3gd8y')
 
   /* Create subscription and expand the latest invoice's Payment Intent 
@@ -36,13 +38,42 @@ async function createCustomerAndSubscription(paymentMethodId, customerInfo) {
     items: [{
       plan: customerInfo.planId,
     }],
-    expand: ["latest_invoice.payment_intent"]
+    expand: ["latest_invoice.payment_intent"],
+    // trial_period_days:1
   });
   console.log('subscription =>', subscription)
   return subscription;
 }
 
-async function updateSubscription(subscriptionId, subscriptionItemId, newProductPriceId){
+async function setupIntents(customerId) {
+  const setupIntent = await stripe.setupIntents.create({
+    customer: customerId,
+    payment_method_types: ['card'],
+  });
+
+  return setupIntent
+}
+
+async function changeDefaultPaymentMethod(customerId, paymentMethodId) {
+  // get old paymentMethodId from DB
+  const oldPaymentMethodId = 'pm_1LIVcpJDn5tTmyIhDNP7nHn0'
+
+  const customer = await stripe.customers.update(customerId, {
+    invoice_settings: {
+      default_payment_method: paymentMethodId
+    }
+  });
+
+  // detached old paymentMethodId
+  const oldPaymentMethod = await stripe.paymentMethods.detach(oldPaymentMethodId)
+
+  // update new paymentMethodId into DB
+
+
+  return { customer, oldPaymentMethod }
+}
+
+async function updateSubscription(subscriptionId, subscriptionItemId, newProductPriceId) {
   const subscription = await stripe.subscriptions.update(subscriptionId, {
     cancel_at_period_end: false,
     proration_behavior: 'create_prorations',
@@ -143,6 +174,8 @@ function getProductsAndPlans() {
 
 module.exports = {
   getProductsAndPlans,
+  setupIntents,
+  changeDefaultPaymentMethod,
   createCustomerAndSubscription,
   updateSubscription,
   cancelSubscription

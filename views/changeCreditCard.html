@@ -3,36 +3,11 @@
 {% block content %}
 
 <div class="app-container-60 register">
-    <h3 class="header-uppercase header-white header-margin-bottom">
-        {{ productName }}
-    </h3>
+
 
     <form id="payment-form">
         <div class="card">
             <div class="card-body">
-
-                <div class="card-title">
-                    <h4 class="header-uppercase header-blue">
-                        {{ plan.nickname }}
-                    </h4>
-                    <h2 class="price">{{ plan.amount }}
-                        <span>
-                            /
-                            {% if (plan.interval_count > 1) %}
-                            {{ plan.interval_count }} {{ plan.interval }}s
-
-                            {% else %}
-                            {{ plan.interval }}
-                            {% endif %}
-                        </span>
-                    </h2>
-                </div>
-
-                <!-- INPUTS -->
-                <input id="plan" type="hidden" value="{{ plan.formatted }}" name="plan" />
-                <input id="customerName" name="name" required="true" placeholder="NameHere" />
-                <input id="customerEmail" name="email" type="email" required="true" placeholder="Email" />
-
                 <div id="card-element">
                     <!-- Stripe Elements will be mounted here -->
                 </div>
@@ -64,7 +39,7 @@
         <div class="card-body">
             <i class="success-icon fas fa-check-circle"></i>
             <h3 class="header-blue">
-                Congrats, you've <br> successfully registered!
+                Already change credit card!
             </h3>
             <p class="helper-text">
                 Log in to the app to start creating your first survey!
@@ -153,6 +128,22 @@
 
 
     /* MORE STRIPE ELEMENTS ACTIONS */
+    let setupIntent
+    fetch('/setupIntent', {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' }
+    }).then((response) => {
+        /* Can only call response.json() once, otherwise you will get an error */
+        return response.json();
+    }).then((parsedResponse) => {
+        /* Proceed to next step of checking Payment Intent status */
+        console.log('parsedResponse.setupIntent =>', parsedResponse)
+        setupIntent = parsedResponse.setupIntent
+    }).catch((err) => {
+        console.error('Error creating setupIntent:', err);
+        showState('error'); // Show error state
+    });
+
 
     /* Create "card" instance of Stripe Elements and mount it to "#card-element" div */
     var cardElement = elements.create("card", { style: elementsStyles });
@@ -168,95 +159,54 @@
 
     form.addEventListener('submit', (event) => {
         event.preventDefault(); // Prevent the default form submission
-        const customerName = document.getElementById('customerName').value;
-        const customerEmail = document.getElementById('customerEmail').value;
-
-        /* Create your 'card' payment method */
-        stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-            /* Reference: https://stripe.com/docs/api/payment_methods/create#create_payment_method-billing_details */
-            billing_details: {
-                name: customerName,
-                email: customerEmail,
-                // address
-                // phone
-            },
-        }).then((result) => {
+        stripe.confirmCardSetup(
+            setupIntent.client_secret,
+            {
+                payment_method: {
+                    card: cardElement,
+                    // billing_details: {
+                    //     name: cardholderName.value,
+                    // },
+                },
+            }
+        ).then(function (result) {
             if (result.error) {
-                displayError(result.error);
-                console.error('Error creating Stripe Payment Method: ', result.error);
+                // Display error.message in your UI.
+                displayError(result.error)
+                console.error('Error confirmCardSetup: ', result.error);
             } else {
-                /* Proceed to next step of creating customer and subscription */
-                console.log('result.paymentMethod =>', result.paymentMethod)
-             
-                stripePaymentMethodHandler(result.paymentMethod);
+                // The setup has succeeded. Display a success message.
+                console.log('result.setupIntent =>', result.setupIntent)
+                changeDefaultPaymentMethod(result.setupIntent);
+
             }
         });
     });
 
 
-    function stripePaymentMethodHandler(paymentMethod) {
-        showState('loading'); // Show loader
+    function changeDefaultPaymentMethod(setupIntent) {
+        /* Do NOT share or embed your client_secret anywhere */
+        const { payment_method } = setupIntent;
 
-        fetch('/handlePayment', {
+        fetch('/changeDefaultPaymentMethod', {
             method: 'post',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                email: document.getElementById('customerEmail').value,
-                name: document.getElementById('customerName').value,
-                plan: document.getElementById('plan').value,
-                address: {
-                    country:"US",
-                    line1: '6F., No. 100, Aly. 50, Ln. 60, Sec. 1, Bade Rd., Zhongzheng Dist., Taipei City'
-                },
-                paymentMethodId: paymentMethod.id,
+                paymentMethodId: payment_method,
             }),
         }).then((response) => {
             /* Can only call response.json() once, otherwise you will get an error */
             return response.json();
         }).then((parsedResponse) => {
             /* Proceed to next step of checking Payment Intent status */
-            console.log('parsedResponse.subscription =>', parsedResponse.subscription)
-            manageSubscriptionStatus(parsedResponse.subscription);
+            console.log('parsedResponse.customer =>', parsedResponse.customer)
+            const customer = parsedResponse.customer
+            showState('success'); // Show success state
         }).catch((err) => {
-            console.error('Error creating subscription:', err);
+            console.error('Error changeDefaultPaymentMethod:', err);
             showState('error'); // Show error state
         });
-    }
 
-
-    function manageSubscriptionStatus(subscription) {
-        const { latest_invoice } = subscription;
-        const { payment_intent } = latest_invoice;
-
-        if (payment_intent) {
-            /* Do NOT share or embed your client_secret anywhere */
-            const { client_secret, status } = payment_intent;
-            if (status === "requires_action" || status === "requires_payment_method") {
-                stripe.confirmCardPayment(client_secret)
-                    .then((result) => {
-                        console.log('result =>', result)
-                        if (result.error) {
-                            console.log('result.error =>', result.error)
-                            showState('payment-form');
-                            displayError(result.error); // Display error message to customer
-                        } else {
-                            showState('success'); // Show success state
-                        }
-                    }).catch((err) => {
-                        console.error('Error confirming card payment:', err);
-                        showState('error'); // Show error state
-                    });
-            } else {
-                showState('success'); // Show success state
-            }
-        } else {
-            /* If no payment intent exists, show the success state
-             * Usually in this case if you set up a trial with the subscription
-             */
-            showState('success');
-        }
     }
 
 </script>

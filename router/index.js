@@ -18,6 +18,28 @@ router.post('/register', (req, res) => {
     });
 });
 
+router.get('/changeCreditCard', (req, res) => {
+    // const plan = JSON.parse(req.body.plan);
+    // plan.formatted = req.body.plan;
+
+    res.render('changeCreditCard.html');
+});
+
+router.post('/setupIntent', async (req, res) => {
+    const customerId = 'cus_M0WgQqQNcHpGMX'
+    const setupIntent = await STRIPE_API.setupIntents(customerId)
+    console.log('setupIntent =>', setupIntent)
+    return res.json({ setupIntent });
+});
+
+router.post('/changeDefaultPaymentMethod', async (req, res) => {
+    const customerId = 'cus_M0WgQqQNcHpGMX'
+    const paymentMethodId = req.body.paymentMethodId
+    const {customer, oldPaymentMethod} = await STRIPE_API.changeDefaultPaymentMethod(customerId, paymentMethodId)
+    
+    return res.json({ customer, oldPaymentMethod });
+});
+
 router.post('/handlePayment', async (req, res) => {
     const parsedPlan = JSON.parse(req.body.plan);
 
@@ -36,10 +58,10 @@ router.post('/handlePayment', async (req, res) => {
     return res.json({ subscription });
 });
 
-router.post('/updateSubscription', async(req, res)=>{
-    const {subscriptionId, subscriptionItemId, newProductPriceId} = req.body
-    const subscription = await STRIPE_API.updateSubscription(subscriptionId, subscriptionItemId, newProductPriceId) 
-    
+router.post('/updateSubscription', async (req, res) => {
+    const { subscriptionId, subscriptionItemId, newProductPriceId } = req.body
+    const subscription = await STRIPE_API.updateSubscription(subscriptionId, subscriptionItemId, newProductPriceId)
+
     return res.json({ subscription });
 })
 
